@@ -4,12 +4,15 @@ using Statistics: mean
 using Random
 
 include("load_galaxy.jl")
+include("augmentation/augment.jl")
 
 function get_batch(images::Array{UInt8,4}, labels::Vector{UInt8}, batch_size::Int)
     N = size(images,4)
     idx = rand(1:N, batch_size)
-    x = Float32.(images[:, :, :,idx]) ./ 255.0
-
+    x = copy(images[:, :, :,idx])
+    x = Float32.(x ./ 255.0 ) 
+    augment!(x)
+    
     y = onehotbatch(labels[idx], 0:9) 
 
     return x, y
@@ -42,24 +45,29 @@ function train_model()
     images, labels = load_galaxy("data/Galaxy10_DECals.h5") 
     println("Dataset loaded")
 
-    println(size(images))
-
     (train_images, train_labels), (test_images, test_labels) = train_test_split(images, labels)
 
     model = Chain(
-        Conv((3,3), 3=>8, relu),
-        MaxPool((2,2)),
-        Conv((3,3), 8=>16, relu),
-        MaxPool((2,2)),
-        Conv((3,3), 16=>32, relu),
-        MaxPool((2,2)),
-        Conv((3,3), 32=>64, relu),
-        MaxPool((2,2)),
-        Conv((3,3), 64=>128, relu),
-        MaxPool((2,2)),
-        Flux.flatten,
-        Dense(4608, 128, relu),
-        Dense(128, 10),
+        # 256×256×3
+        Conv((3,3), 3=>32, relu, pad=1),
+        MaxPool((2,2)),          # 128×128×32
+
+        Conv((3,3), 32=>64, relu, pad=1),
+        MaxPool((2,2)),          # 64×64×64
+
+        Conv((3,3), 64=>128, relu, pad=1),
+        MaxPool((2,2)),          # 32×32×128
+
+        Conv((3,3), 128=>256, relu, pad=1),
+        MaxPool((2,2)),          # 16×16×256
+
+        Conv((3,3), 256=>512, relu, pad=1),
+        MaxPool((2,2)),          # 8×8×512
+
+        x -> mean(x, dims=(1,2)),  # 1×1×512×B
+        Flux.flatten,              # 512×B
+
+        Dense(512, 10),
         Flux.softmax
     )
 
@@ -78,11 +86,15 @@ function train_model()
 
         Flux.update!(opt_state, model, gs[1])
         
+        
         if batch % 10 == 0
             tx, ty = get_batch(test_images, test_labels, batch_size)
             train_acc = accuracy(model(xb), yb)
             test_acc = accuracy(model(tx), ty)
             @info "Batch $batch" loss=loss_fn(model, xb, yb) test_loss=loss_fn(model, tx, ty) train_acc=train_acc test_acc=test_acc
+        else
+            @info "Batch $batch"
         end
     end
 end
+
