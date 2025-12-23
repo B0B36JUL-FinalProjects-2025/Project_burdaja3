@@ -5,12 +5,13 @@ using Random
 
 include("load_galaxy.jl")
 include("augmentation/augment.jl")
+include("show_image.jl")
 
 function get_batch(images::Array{UInt8,4}, labels::Vector{UInt8}, batch_size::Int)
     N = size(images,4)
     idx = rand(1:N, batch_size)
-    x = copy(images[:, :, :,idx])
-    x = Float32.(x ./ 255.0 ) 
+    x = Float32.(images[:, :, :, idx]) ./ 255f0
+
     augment!(x)
     
     y = onehotbatch(labels[idx], 0:9) 
@@ -86,10 +87,7 @@ function train_model()
 
         Flux.update!(opt_state, model, gs[1])
         
-        
         if batch % 10 == 0
-            tx, ty = get_batch(test_images, test_labels, batch_size)
-            train_acc = accuracy(model(xb), yb)
             test_acc = accuracy(model(tx), ty)
             @info "Batch $batch" loss=loss_fn(model, xb, yb) test_loss=loss_fn(model, tx, ty) train_acc=train_acc test_acc=test_acc
         else

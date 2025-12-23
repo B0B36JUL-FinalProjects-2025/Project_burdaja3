@@ -31,8 +31,8 @@ allocations inside the loop.
 function augment!(
     imgs::Array{Float32,4};
     max_rotate::Float32 = 180f0,
-    max_transpose::Float32 = 0.1f0,
-    max_zoom::Float32 = 1.1f0,
+    max_transpose::Float32 = 0.2f0,
+    max_zoom::Float32 = 1.2f0,
 )
 
     H, W, C, N = size(imgs)
