@@ -3,7 +3,7 @@ using Flux: onehotbatch, crossentropy
 using Statistics: mean
 using Random
 
-include("load_galaxy.jl")
+include("dataset_loading.jl")
 include("augmentation/augment.jl")
 include("show_image.jl")
 
