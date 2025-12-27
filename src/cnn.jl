@@ -72,7 +72,7 @@ function train_model()
         Flux.softmax
     )
 
-    opt = ADAM(0.0005)
+    opt = ADAM(0.005)
     opt_state = Flux.setup(opt, model)
 
     loss_fn(m, x, y) = crossentropy(m(x), y)
@@ -80,7 +80,7 @@ function train_model()
     
 
     for batch in 1:10000
-        batch_size = 256
+        batch_size = 32
         xb, yb = get_batch(train_images, train_labels, batch_size)
        
         gs = Flux.gradient(m -> loss_fn(m, xb, yb), model)
@@ -88,8 +88,7 @@ function train_model()
         Flux.update!(opt_state, model, gs[1])
         
         if batch % 10 == 0
-            test_acc = accuracy(model(tx), ty)
-            @info "Batch $batch" loss=loss_fn(model, xb, yb) test_loss=loss_fn(model, tx, ty) train_acc=train_acc test_acc=test_acc
+            @info "Batch $batch" loss=loss_fn(model, xb, yb)
         else
             @info "Batch $batch"
         end

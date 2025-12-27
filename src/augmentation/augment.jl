@@ -1,64 +1,114 @@
 using ImageTransformations, Interpolations, Images
 
-include("translation.jl")
 include("rotation.jl")
+include("translation.jl")
 include("zoom.jl")
 
 """
-    augment!(imgs::Array{Float32,4};
-             max_rotate::Float32 = 180f0,
-             max_transpose::Float32 = 0.1f0,
-             max_zoom::Float32 = 1.1f0)
+    augment!(out, imgs;
+             max_rotate=180f0,
+             max_transpose=0.2f0,
+             max_zoom=1.2f0)
 
-Applies in-place random augmentation to a batch of 3D Float32 images (H × W × C × N).
-Supports rotation, translation, and zooming, using pre-allocated buffers to avoid
-allocations inside the loop.
+Applies random augmentation to a batch of images.
 
-# Arguments
-- `imgs::Array{Float32,4}` : batch of images to augment (H × W × C × N).
-- `max_rotate::Float32` : maximum rotation angle in degrees (±max_rotate).
-- `max_transpose::Float32` : maximum fraction of image height for translation.
-- `max_zoom::Float32` : maximum zoom factor (scale between 1 and max_zoom).
+Arguments
+---------
+- `out::Array{Float32,4}` :
+    Output buffer (H × W × C × N)
 
-# Behavior
-- Iterates over each image in the batch.
-- Generates random augmentation parameters for rotation, translation, and zoom.
-- Uses `rotate!`, `translate!`, and `zoom!` mutating functions.
-- Pre-allocates two working buffers (`buf1`, `buf2`) for efficiency.
-- Applies operations in the order: rotate → translate → zoom.
-- Mutates `imgs` in-place.
+- `imgs::Array{Float32,4}` :
+    Input batch (H × W × C × N)
+
+Keyword arguments
+-----------------
+- `max_rotate`    : maximum rotation angle in degrees
+- `max_transpose` : maximum translation as fraction of image height
+- `max_zoom`      : maximum zoom factor (≥ 1)
+
+Behavior
+--------
+For each image:
+1. rotate
+2. translate
+3. zoom
 """
 function augment!(
+    out::Array{Float32,4},
     imgs::Array{Float32,4};
     max_rotate::Float32 = 180f0,
     max_transpose::Float32 = 0.2f0,
     max_zoom::Float32 = 1.2f0,
 )
-
     H, W, C, N = size(imgs)
-    max_trans = floor(Int, H * max_transpose)  # max pixel shift for translation
+    @assert size(out) == (H, W, C, N)
 
-    # Pre-allocated working buffers to avoid allocations in the loop
+    max_trans_h = floor(Int, H * max_transpose)
+    max_trans_w = floor(Int, W * max_transpose)
+
+    # working buffers (reused for all images)
     buf1 = Array{Float32}(undef, H, W, C)
     buf2 = Array{Float32}(undef, H, W, C)
 
     for n in 1:N
-        # Work directly on a view of the nth image
-        img = @view imgs[:,:,:,n]
+        img  = @view imgs[:,:,:,n]
+        outn = @view out[:,:,:,n]
 
-        # Random augmentation parameters
-        θ  = (2f0 * rand(Float32) - 1f0) * max_rotate  # rotation angle in [-max_rotate, max_rotate]
-        dx = rand(-max_trans:max_trans)                 # x-axis translation
-        dy = rand(-max_trans:max_trans)                 # y-axis translation
-        z  = 1f0 + rand(Float32) * (max_zoom - 1f0)    # zoom factor >= 1
+        θ  = (2f0 * rand(Float32) - 1f0) * max_rotate
+        dx = rand(-max_trans_h:max_trans_h)
+        dy = rand(-max_trans_w:max_trans_w)
+        z  = 1f0 + rand(Float32) * (max_zoom - 1f0)
 
-        # Apply augmentations using mutating functions
-        rotate!(buf1, img, θ)          # rotate img → buf1
-        translate!(buf2, buf1, dx, dy) # translate buf1 → buf2
-        zoom!(img, buf2, z)            # zoom buf2 → img (in-place)
-
+        rotate!(buf1, img, θ)
+        translate!(buf2, buf1, dx, dy)
+        zoom!(outn, buf2, z)
     end
 
-    return nothing
+    return out
 end
+
+
+
+
+"""
+    augment!(out, img; ...)
+
+Applies random rotation, translation, and zoom to a single image.
+
+Arguments:
+- `out::Array{Float32,3}` : output buffer
+- `img::Array{Float32,3}` : input image
+
+Keyword arguments:
+- `max_rotate`    : max rotation angle in degrees
+- `max_transpose` : max translation as fraction of image height
+- `max_zoom`      : maximum zoom factor
+"""
+function augment!(
+    out::Array{Float32,3},
+    img::Array{Float32,3};
+    max_rotate::Float32 = 180f0,
+    max_transpose::Float32 = 0.2f0,
+    max_zoom::Float32 = 1.2f0,
+)
+    H, W, _ = size(img)
+
+    max_trans_h = floor(Int, H * max_transpose)
+    max_trans_w = floor(Int, W * max_transpose)
+
+    θ  = (2f0 * rand(Float32) - 1f0) * max_rotate
+    dx = rand(-max_trans_h:max_trans_h)
+    dy = rand(-max_trans_w:max_trans_w)
+    z  = 1f0 + rand(Float32) * (max_zoom - 1f0)
+
+    tmp = similar(img)
+
+    rotate!(tmp, img, θ)
+    translate!(out, tmp, dx, dy)
+    zoom!(out, out, z)
+
+    return out
+end
+
+
 
