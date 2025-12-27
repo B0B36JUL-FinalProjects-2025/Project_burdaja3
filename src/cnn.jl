@@ -7,12 +7,10 @@ include("dataset_loading.jl")
 include("augmentation/augment.jl")
 include("show_image.jl")
 
-function get_batch(images::Array{UInt8,4}, labels::Vector{UInt8}, batch_size::Int)
+function get_batch()
     N = size(images,4)
     idx = rand(1:N, batch_size)
     x = Float32.(images[:, :, :, idx]) ./ 255f0
-
-    augment!(x)
     
     y = onehotbatch(labels[idx], 0:9) 
 

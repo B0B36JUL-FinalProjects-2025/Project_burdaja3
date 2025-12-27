@@ -1,4 +1,5 @@
 using HDF5
+using Random
 
 """
 Load training datasets (one per label) as HDF5 dataset references.
@@ -58,3 +59,5 @@ function load_test(path::String = "data/test")
 
     return images, labels
 end
+
+

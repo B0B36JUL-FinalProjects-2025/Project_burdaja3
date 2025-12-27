@@ -58,13 +58,19 @@ end
 
 
 """
-Save an augmented version of a dataset into an HDF5 file.
-Each image in the input dataset is expanded into `(augments + 1)` images:
-the original plus its augmented variants..
+Save an augmented and shuffled version of a dataset into an HDF5 file.
+
+Each input image is expanded into `(augments + 1)` samples
+(original + augmented variants). All augmented samples are first stored
+in memory, then randomly shuffled, and finally written to disk.
+
+This ensures that later block-wise reading yields well-mixed data.
+
 # Arguments
 - `filename::String`: output HDF5 file path
 - `dataset::Array{UInt8,4}`: input images `(H, W, C, N)`
 - `augments::Int=8`: number of augmentations per image
+- `key::String="images"`: dataset name inside HDF5
 """
 function save_augmented_dataset(filename::String,
                                 dataset::Array{UInt8,4};
@@ -74,17 +80,27 @@ function save_augmented_dataset(filename::String,
     H, W, C, N = size(dataset)
     total_size = N * (augments + 1)
 
-    h5open(filename, "w") do file
-        file[key] = zeros(UInt8, H, W, C, total_size)
-        dset = file[key]
+    # buffer for all augmented images (before shuffling)
+    buffer = Array{UInt8}(undef, H, W, C, total_size)
 
-        idx = 1
-        for i in 1:N
-            aug_data = generate_augmented_images(dataset[:,:,:,i], augments=augments)
-            dset[:,:,:,(idx):(idx + augments)] = aug_data
-            idx += augments + 1
-        end
+    idx = 1
+    for i in 1:N
+        aug_data = generate_augmented_images(dataset[:,:,:,i], augments=augments)
+
+        buffer[:,:,:,(idx):(idx + augments)] .= aug_data
+        idx += augments + 1
     end
+
+    # shuffle along sample dimension
+    perm = randperm(total_size)
+    buffer = buffer[:,:,:,perm]
+
+    # write to HDF5
+    h5open(filename, "w") do file
+        file[key] = buffer
+    end
+
+    return nothing
 end
 
 
@@ -138,7 +154,7 @@ For each class label:
 - Train HDF5 files: `data/train/label_<label>.h5`
 - Test HDF5 file: `data/test/test.h5` with `"images"` and `"labels"`
 """
-function enlarge_split(path::String; test_frac=0.1, augments=8)
+function enlarge_split(path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augments=8)
     images, labels = load_galaxy(path)
 
     # ensure output directories exist
