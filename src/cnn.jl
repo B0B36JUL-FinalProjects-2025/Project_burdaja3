@@ -1,38 +1,13 @@
 using Flux
-using Flux: onehotbatch, crossentropy
+using Flux: onehotbatch, logitcrossentropy
 using Statistics: mean
 using Random
+using BSON
 
 include("dataset_loading.jl")
+include("batches.jl")
 include("augmentation/augment.jl")
-include("show_image.jl")
-
-function get_batch()
-    N = size(images,4)
-    idx = rand(1:N, batch_size)
-    x = Float32.(images[:, :, :, idx]) ./ 255f0
-    
-    y = onehotbatch(labels[idx], 0:9) 
-
-    return x, y
-end
-
-
-function train_test_split(images::Array{UInt8,4}, labels::Vector{UInt8}, train_frac=0.8)
-    N = size(images,4)
-    idx = shuffle(1:N)
-    n_train = Int(floor(train_frac * N))
-    train_idx = idx[1:n_train]
-    test_idx = idx[n_train+1:end]
-    
-    train_images = images[:, :, :, train_idx]
-    train_labels = labels[train_idx]
-    
-    test_images = images[:, :, :, test_idx]
-    test_labels = labels[test_idx]
-    
-    return (train_images, train_labels), (test_images, test_labels)
-end
+include("metric.jl")
 
 function accuracy(pred, y)
     y_true = Flux.onecold(y, 0:9)     
@@ -40,56 +15,105 @@ function accuracy(pred, y)
     return mean(y_pred .== y_true)      
 end
 
-function train_model()
-    images, labels = load_galaxy("data/Galaxy10_DECals.h5") 
-    println("Dataset loaded")
+function l2_normalize(x; dims=1)
+    return x ./ sqrt.(sum(x.^2, dims=dims) .+ 1e-8)
+end
 
-    (train_images, train_labels), (test_images, test_labels) = train_test_split(images, labels)
+struct HybridModel
+    embedding
+    classifier
+end
 
-    model = Chain(
-        # 256×256×3
-        Conv((3,3), 3=>32, relu, pad=1),
-        MaxPool((2,2)),          # 128×128×32
+(m::HybridModel)(x) = m.classifier(m.embedding(x))
+
+get_embs(m::HybridModel, x) = m.embedding(x)
+
+get_probs(m::HybridModel, x) = softmax(m(x), dims=1)
+
+get_outputs(m::HybridModel, x) = (m.embedding(x), m.classifier(m.embedding(x)))
+
+
+function loss_fn(model, x, y, alpha)
+
+    embedding_raw, logits = get_outputs(model, x)
+    embedding_norm = l2_normalize(embedding_raw, dims=1)
+
+    labels = Flux.onecold(y, 0:9)
+    me_loss = metric_loss(embedding_norm, labels)
+    ce_loss = logitcrossentropy(logits, y)
+
+    return ce_loss  + alpha * me_loss
+end
+
+
+
+function train_model(;augment::Bool=true, batches::Int=10000, block_size::Int=32, alpha::Float32=1f0, save_path::String="model/cnn_metric.bson")
+    embedding = Chain(
+        Conv((3,3), 3=>8, relu, pad=1),
+        MaxPool((2,2)),
+
+        Conv((3,3), 8=>16, relu, pad=1),
+        MaxPool((2,2)),
+
+        Conv((3,3), 16=>32, relu, pad=1),
+        MaxPool((2,2)),
 
         Conv((3,3), 32=>64, relu, pad=1),
-        MaxPool((2,2)),          # 64×64×64
+        x -> mean(x, dims=(1,2)),
 
-        Conv((3,3), 64=>128, relu, pad=1),
-        MaxPool((2,2)),          # 32×32×128
-
-        Conv((3,3), 128=>256, relu, pad=1),
-        MaxPool((2,2)),          # 16×16×256
-
-        Conv((3,3), 256=>512, relu, pad=1),
-        MaxPool((2,2)),          # 8×8×512
-
-        x -> mean(x, dims=(1,2)),  # 1×1×512×B
-        Flux.flatten,              # 512×B
-
-        Dense(512, 10),
-        Flux.softmax
+        Flux.flatten
     )
+
+    classifier = Dense(64, 10)
+
+    model = HybridModel(embedding, classifier)
+
 
     opt = ADAM(0.005)
     opt_state = Flux.setup(opt, model)
 
-    loss_fn(m, x, y) = crossentropy(m(x), y)
-
     
 
-    for batch in 1:10000
-        batch_size = 32
-        xb, yb = get_batch(train_images, train_labels, batch_size)
+    train = load_train()
+
+    for batch in 1:batches
+
+        xb, yb = load_batch(train, block_size)
+
+        # augmentations can also be added directly to the datasets via dataset_enlargement.jl
+        if(augment)
+            augment!(xb,xb)
+        end
        
-        gs = Flux.gradient(m -> loss_fn(m, xb, yb), model)
+        gs = Flux.gradient(m -> loss_fn(m, xb, yb, alpha), model)
 
         Flux.update!(opt_state, model, gs[1])
         
         if batch % 10 == 0
-            @info "Batch $batch" loss=loss_fn(model, xb, yb)
+            println(batch)
+            println(loss_fn(model, xb, yb, alpha))
+            println(accuracy(model(xb),yb))
+            if batch % 100 == 0
+                test_x, test_y = load_test()
+                pred = model((Float32.(test_x)) ./ 255f0)
+                y = onehotbatch(test_y, 0:9)
+                println(accuracy(pred, y))
+            end
         else
-            @info "Batch $batch"
+            println(batch)
         end
     end
+
+    save_model(save_path, model)
+end
+
+function save_model(path, model)
+    BSON.@save path state=Flux.state(model)
+end
+
+function load_model(path, model)
+    BSON.@load path state
+    Flux.loadmodel!(model, state)
+    return model
 end
 

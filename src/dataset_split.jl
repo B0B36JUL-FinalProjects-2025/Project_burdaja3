@@ -69,12 +69,12 @@ This ensures that later block-wise reading yields well-mixed data.
 # Arguments
 - `filename::String`: output HDF5 file path
 - `dataset::Array{UInt8,4}`: input images `(H, W, C, N)`
-- `augments::Int=8`: number of augmentations per image
+- `augments::Int=0`: number of augmentations per image
 - `key::String="images"`: dataset name inside HDF5
 """
 function save_augmented_dataset(filename::String,
                                 dataset::Array{UInt8,4};
-                                augments::Int=8,
+                                augments::Int=0,
                                 key::String="images")
 
     H, W, C, N = size(dataset)
@@ -139,22 +139,22 @@ end
 
 """
 Split dataset into training and test sets, augment training images,
-and save them into HDF5 files.
+and save them into HDF5 files by their labels.
 
 For each class label:
 - A fraction of images (`test_frac`) is saved as test set without augmentations
-- Remaining images are augmented and saved as training set
+- Remaining images are augmented and saved as training sets
 
 # Arguments
 - `path::String`: path to the original Galaxy10 dataset
 - `test_frac::Float64=0.1`: fraction of images per class to use for test set
-- `augments::Int=8`: number of augmentations per training image
+- `augments::Int=0`: number of augmentations per training image
 
 # Output
 - Train HDF5 files: `data/train/label_<label>.h5`
 - Test HDF5 file: `data/test/test.h5` with `"images"` and `"labels"`
 """
-function enlarge_split(path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augments=8)
+function split(;path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
     images, labels = load_galaxy(path)
 
     # ensure output directories exist

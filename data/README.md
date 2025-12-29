@@ -10,17 +10,15 @@ Place the file in the `data/` folder:
 
 data/Galaxy10_DECals.h5
 
-## 2. Generate augmented training data and split test set
+## 2. Generate augmented training datasetes and split test set
 
-Run the `enlarge_split` function from the `enlarge_split_data.jl` script:
+Run the `split` function from the `dataset_split.jl` script:
 
 ```julia
-include("src/enlarge_split_data.jl")
+include("dataset_split.jl")
 
-# Example usage
 enlarge_split("data/Galaxy10_DECals.h5"; test_frac=0.1, augments=8)
 
-### What happens
 
 - The dataset is loaded from `data/Galaxy10_DECals.h5`.
 
