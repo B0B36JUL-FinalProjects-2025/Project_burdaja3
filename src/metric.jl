@@ -2,8 +2,8 @@
 Compute combined metric loss (triplet + contrastive) on a batch of embeddings.
 
 # Arguments
-- `emb::Array`: embeddingy batchu, shape (embedding_dim, batch_size)
-- `y`: labels
+- `emb::Array{Float64,2}`: embeddingy batchu, shape (embedding_dim, batch_size)
+- `y::Vector{Int}`: labels
 - `use_triplet::Bool`: whether to include triplet loss (default: true)
 - `use_contrastive::Bool`: whether to include contrastive loss (default: true)
 - `margin_triplet::Float32`: margin for triplet loss (default: 0.5)
@@ -37,16 +37,16 @@ end
 Compute pairwise L2 distances between all embeddings in the batch.
 
 # Arguments
-- `emb::Array`: embeddingy batchu, shape (embedding_dim, batch_size)
+- `emb::Array{Float64,2}`: embeddingy batchu, shape (embedding_dim, batch_size)
 
 # Returns
 - `D::Array`: B×B matrix of pairwise Euclidean distances
 """
 function distances(emb::Array{Float64,2})
-    # ∣∣ei​−ej​∣∣2 = ∣∣ei​∣∣2 + ∣∣ej​∣∣2 − 2(eiT​ej​)
-    sq = sum(emb .^ 2, dims=1)               
-    dist2 = sq .+ sq' .- 2f0 .* (emb' * emb)
-    return sqrt.(max.(dist2, 0f0))
+    sq = sum(emb.^2, dims=1)               
+    dist2 = sq .+ sq' .- 2.0 .* (emb' * emb)
+    dist2 = max.(dist2, 1e-12)
+    return sqrt.(dist2)
 end
 
 
@@ -54,8 +54,8 @@ end
 Compute contrastive loss on a batch of embeddings.
 
 # Arguments
-- `emb::Array`: embeddings, shape (embedding_dim, batch_size)
-- `labels`: labels
+- `emb::Array{Float64,2}`: embeddings, shape (embedding_dim, batch_size)
+- `labelsy::Vector{Int}`: labels
 - `margin::Float32`: distance margin for negative pairs (default: 1.0)
 
 # Returns
@@ -64,15 +64,18 @@ Compute contrastive loss on a batch of embeddings.
 Positive pairs are pulled together; negative pairs are pushed apart beyond the margin.
 """
 function contrastive_loss(emb::Array{Float64,2}, labels::Vector{Int}; margin::Float32=1.0f0)
-    D = distances(emb)       
-
+    D = distances(emb)  
+    
     pos_mask = labels .== labels' # matrix of positive doubles
     neg_mask = .!pos_mask # matrix of negative embedings doubles
 
     pos_loss = D[pos_mask] .^ 2 # minimizing distances of same-labeled embeddings
     neg_loss = max.(0f0, margin .- D[neg_mask]) .^ 2 # maximizing distances of differently labeled embeddings
 
-    return (sum(pos_loss) + sum(neg_loss)) / (length(pos_loss) + length(neg_loss)) # normalize by number of pairs
+    con_loss = (sum(pos_loss) + sum(neg_loss)) / (length(pos_loss) + length(neg_loss)) # normalize by number of pairs
+
+    return con_loss
+
 end
 
 
@@ -80,8 +83,8 @@ end
 Compute batch-hard triplet margin loss on a batch of embeddings.
 
 # Arguments
-- `emb::Array`: embeddings, shape (embedding_dim, batch_size)
-- `labels`: labels
+- `emb::Array{Float64,2}`: embeddings, shape (embedding_dim, batch_size)
+- `labelsy::Vector{Int}`: labels
 - `margin::Float32`: margin for triplet loss (default: 0.5)
 
 # Returns
@@ -114,6 +117,9 @@ function triplet_loss(emb::Array{Float64,2}, labels::Vector{Int}; margin::Float3
         count += 1
     end
 
-    return count > 0 ? loss / count : 0f0  # average over valid anchors
+    tri_loss = count > 0 ? loss / count : 0f0  # average over valid anchors
+
+    return tri_loss
+
 end
 

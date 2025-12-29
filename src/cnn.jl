@@ -16,7 +16,9 @@ function accuracy(pred, y)
 end
 
 function l2_normalize(x; dims=1)
-    return x ./ sqrt.(sum(x.^2, dims=dims) .+ 1e-8)
+    norms = sqrt.(sum(x.^2, dims=dims))
+    norms = max.(norms, 1e-6)      
+    return x ./ norms
 end
 
 struct HybridModel
@@ -30,19 +32,25 @@ get_embs(m::HybridModel, x) = m.embedding(x)
 
 get_probs(m::HybridModel, x) = softmax(m(x), dims=1)
 
-get_outputs(m::HybridModel, x) = (m.embedding(x), m.classifier(m.embedding(x)))
-
 
 function loss_fn(model, x, y, alpha)
 
-    embedding_raw, logits = get_outputs(model, x)
+    embedding_raw = get_embs(model, x)
+    logits = model(x)
+
     embedding_norm = l2_normalize(embedding_raw, dims=1)
 
-    labels = Flux.onecold(y, 0:9)
-    me_loss = metric_loss(embedding_norm, labels)
+    lab = Flux.onecold(y, 0:9)
+
+    me_loss = alpha > 0 ? metric_loss(embedding_norm, lab) : 0f0
+
     ce_loss = logitcrossentropy(logits, y)
 
-    return ce_loss  + alpha * me_loss
+    ls = ce_loss + alpha * me_loss
+
+    println(ls)
+
+    return ls
 end
 
 
@@ -69,9 +77,8 @@ function train_model(;augment::Bool=true, batches::Int=10000, block_size::Int=32
     model = HybridModel(embedding, classifier)
 
 
-    opt = ADAM(0.005)
+    opt = ADAM(0.0005)
     opt_state = Flux.setup(opt, model)
-
     
 
     train = load_train()
@@ -84,8 +91,9 @@ function train_model(;augment::Bool=true, batches::Int=10000, block_size::Int=32
         if(augment)
             augment!(xb,xb)
         end
-       
+
         gs = Flux.gradient(m -> loss_fn(m, xb, yb, alpha), model)
+        
 
         Flux.update!(opt_state, model, gs[1])
         
@@ -116,4 +124,3 @@ function load_model(path, model)
     Flux.loadmodel!(model, state)
     return model
 end
-
