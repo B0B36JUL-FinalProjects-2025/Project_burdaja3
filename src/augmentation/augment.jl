@@ -88,8 +88,8 @@ function augment!(
     out::Array{Float32,3},
     img::Array{Float32,3};
     max_rotate::Float32 = 180f0,
-    max_transpose::Float32 = 0.2f0,
-    max_zoom::Float32 = 1.2f0,
+    max_transpose::Float32 = 0.25f0,
+    max_zoom::Float32 = 1.25f0,
 )
     H, W, _ = size(img)
 

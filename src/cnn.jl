@@ -18,15 +18,14 @@ function accuracy(pred, y)
 end
 
 function loss_fn(model, x, y, alpha)
-    embedding_raw = get_embs(model, x)
+    embedding = get_embs(model, x)
     logits = model(x)
 
     ce_loss = logitcrossentropy(logits, y)
 
     if (alpha > 0)
-        embedding_norm = l2_normalize(embedding_raw, dims=1)
         lab = Flux.onecold(y, 0:9)
-        me_loss = metric_loss(Float32.(embedding_norm), lab)
+        me_loss = metric_loss(Float32.(embedding), lab)
         
         return ce_loss + alpha * me_loss
     end
@@ -36,7 +35,7 @@ end
 
 
 
-function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16, alpha::Float32=0.7f0, save_path::String="model/cnn_metric.bson", resume::Bool=false)
+function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16, alpha::Float32=0.7f0, save_path::String="model/cnn_metric.bson", resume::Bool=true)
     model = get_defualt_hybrid_model()
     if resume && isfile(save_path)
         opt_state, start_batch = load_model!(save_path, model)
@@ -73,7 +72,9 @@ function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16,
                 y = onehotbatch(test_y, 0:9)
                 println(accuracy(pred, y))
 
-                visualise(get_embs(model, test_x), test_y)
+                embs = get_embs(model, test_x)
+                visualise2D(embs, test_y)
+                #visualise3D(embs, test_y)
             end
         end
     end

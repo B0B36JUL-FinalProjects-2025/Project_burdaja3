@@ -3,7 +3,7 @@ using Plots
 
 include("metric.jl")
 
-function visualise(data::Array{Float32, 2}, labels::Vector{Int})
+function visualise2D(data::Array{Float32, 2}, labels::Vector{Int})
     distan = distances(data)
 
     Y = umap(
@@ -12,17 +12,38 @@ function visualise(data::Array{Float32, 2}, labels::Vector{Int})
         metric=:precomputed
     )
 
-    
-
-    Y = Y'
 
     sc = scatter(
-        Y[:, 1],
-        Y[:, 2],
+        Y[1, :],
+        Y[2, :],
         group = labels,
         legend = :outertopright,
         title = "Embeddings"
     )
+    display(sc)
+
+    return Y
+end
+
+
+function visualise3D(data::Array{Float32, 2}, labels::Vector{Int})
+    distan = distances(data)
+
+    Y = umap(
+        distan,
+        3;             
+        metric = :precomputed
+    )
+
+    sc = scatter3d(
+        Y[1, :],
+        Y[2, :],
+        Y[3, :],
+        group = labels,
+        legend = :outertopright,
+        title = "Embeddings"
+    )
+
     display(sc)
 
     return Y
