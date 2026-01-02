@@ -64,9 +64,9 @@ function augment!(
         z  = 1f0 + rand(Float32) * (max_zoom - 1f0)
 
         rotate!(buf1, img, θ)
-        translate!(buf2, buf1, dx, dy)
-        noise!(buf2, buf2, stddev_perc = stddev_perc)
-        zoom!(outn, buf3, z)
+        translate!(buf2, buf1, dx, dy)    
+        zoom!(buf3, buf2, z)
+        noise!(outn, buf3, stddev_perc = stddev_perc)
     end
 
     return out

@@ -16,7 +16,7 @@ Run the `split` function from the `src/dataset_creation/dataset_split.jl` script
 
 ```julia
 include("src/dataset_creation/dataset_split.jl")
-enlarge_split("data/Galaxy10_DECals.h5"; test_frac=0.1, augments=8)
+split(path="data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
 
 
 - The dataset is loaded from `data/Galaxy10_DECals.h5`.

@@ -10,6 +10,7 @@ include("augmentation/augment.jl")
 include("metric.jl")
 include("hybrid_model.jl")
 include("visualisation.jl")
+include("model_save_load.jl")
 
 function accuracy(pred, y)
     y_true = Flux.onecold(y, 0:9)     
@@ -82,12 +83,3 @@ function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16,
     save_model(save_path, model, opt_state, batches + 1)
 end
 
-function save_model(path, model, opt_state, step)
-    BSON.@save path state=Flux.state(model) opt_state step
-end
-
-function load_model!(path, model)
-    BSON.@load path state opt_state step
-    Flux.loadmodel!(model, state)
-    return opt_state, step
-end

@@ -27,8 +27,10 @@ function noise!(out::AbstractArray{Float32,3}, img::AbstractArray{Float32,3}; me
     # Generate noise for all channels simultaneously
     noise = randn(Float32, H, W, C) * stddev .+ mean  # Noise for all channels (R, G, B)
 
+    
+
     # Add the noise and clamp the values between 0 and max_value
-    out .= clamp(img .+ noise, 0.0f0, max_value)
+    out .= clamp.(img .+ noise, 0.0f0, max_value)
 
     return out
 end
