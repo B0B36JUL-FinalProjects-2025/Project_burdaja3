@@ -9,17 +9,12 @@ include("batches.jl")
 include("augmentation/augment.jl")
 include("metric.jl")
 include("hybrid_model.jl")
+include("visualisation.jl")
 
 function accuracy(pred, y)
     y_true = Flux.onecold(y, 0:9)     
     y_pred = Flux.onecold(pred, 0:9)    
     return mean(y_pred .== y_true)      
-end
-
-function l2_normalize(x; dims=1)
-    norms = sqrt.(sum(x.^2, dims=dims))
-    norms = max.(norms, 1e-6)      
-    return x ./ norms
 end
 
 function loss_fn(model, x, y, alpha)
@@ -32,6 +27,7 @@ function loss_fn(model, x, y, alpha)
         embedding_norm = l2_normalize(embedding_raw, dims=1)
         lab = Flux.onecold(y, 0:9)
         me_loss = metric_loss(Float32.(embedding_norm), lab)
+        
         return ce_loss + alpha * me_loss
     end
 
@@ -40,13 +36,13 @@ end
 
 
 
-function train_model(;augment::Bool=true, batches::Int=2000, pretraining::Int=500, block_size::Int=32, alpha::Float32=1f0, save_path::String="model/cnn_metric.bson", resume::Bool=false)
+function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16, alpha::Float32=0.7f0, save_path::String="model/cnn_metric.bson", resume::Bool=false)
     model = get_defualt_hybrid_model()
     if resume && isfile(save_path)
         opt_state, start_batch = load_model!(save_path, model)
     else
         start_batch = 1
-        opt = ADAM(0.01)
+        opt = ADAM()
         opt_state = Flux.setup(opt, model)
     end
 
@@ -61,12 +57,7 @@ function train_model(;augment::Bool=true, batches::Int=2000, pretraining::Int=50
             augment!(xb,xb)
         end
 
-
-        if (batch < pretraining)
-            gs = Flux.gradient(m -> loss_fn(m, xb, yb, 0), model)
-        else
-            gs = Flux.gradient(m -> loss_fn(m, xb, yb, alpha), model)
-        end
+        gs = Flux.gradient(m -> loss_fn(m, xb, yb, alpha), model)
         
 
         Flux.update!(opt_state, model, gs[1])
@@ -81,6 +72,8 @@ function train_model(;augment::Bool=true, batches::Int=2000, pretraining::Int=50
                 pred = model((Float32.(test_x)) ./ 255f0)
                 y = onehotbatch(test_y, 0:9)
                 println(accuracy(pred, y))
+
+                visualise(get_embs(model, test_x), test_y)
             end
         end
     end

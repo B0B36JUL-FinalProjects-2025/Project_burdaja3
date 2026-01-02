@@ -2,7 +2,7 @@ using Images, ImageView
 
 function show_image(img::Array{UInt8,3})
     img = permutedims(img, (3, 1, 2))
-    img_f = float32.(img) ./ 255         
+    img_f = float32.(img)         
     img_rgb = colorview(RGB, img_f)
     imshow(img_rgb)
 end

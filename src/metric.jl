@@ -1,3 +1,9 @@
+function l2_normalize(x; dims=1)
+    norms = sqrt.(sum(x.^2, dims=dims))
+    norms = max.(norms, 1e-6)      
+    return x ./ norms
+end
+
 """
 Compute combined metric loss (triplet + contrastive) on a batch of embeddings.
 
@@ -16,13 +22,14 @@ function metric_loss(emb::Array{Float32,2}, y::Vector{Int};
         use_triplet::Bool = true,
         use_contrastive::Bool = true,
         margin_triplet::Float32 = 0.5f0,
-        margin_contrastive::Float32 = 1.0f0
+        margin_contrastive::Float32 = 1.5f0,
+        triplet_perc::Float32 = 0.5f0
     )
 
     loss = 0f0
 
     if use_triplet
-        loss += triplet_loss(emb, y; margin=margin_triplet)
+        loss +=  triplet_perc * triplet_loss(emb, y; margin=margin_triplet)
     end
 
     if use_contrastive
@@ -72,9 +79,10 @@ function contrastive_loss(emb::Array{Float32,2}, labels::Vector{Int}; margin::Fl
     pos_loss = D[pos_mask] .^ 2 # minimizing distances of same-labeled embeddings
     neg_loss = max.(0f0, margin .- D[neg_mask]) .^ 2 # maximizing distances of differently labeled embeddings
 
-    con_loss = (sum(pos_loss) + sum(neg_loss)) / (length(pos_loss) + length(neg_loss)) # normalize by number of pairs
+    sum_pos_loss = sum(pos_loss) / length(pos_loss)
+    sum_neg_loss = sum(neg_loss) / length(neg_loss)
 
-    return con_loss
+    return sum_pos_loss + sum_neg_loss
 
 end
 
@@ -102,7 +110,7 @@ function triplet_loss(emb::Array{Float32,2}, labels::Vector{Int}; margin::Float3
     count = 0
 
     for i in 1:B
-        same = Array(labels .== labels[i]) .& (1:B .!= i)   # mask for positives (same class) except for anchor
+        same = Array(labels .== labels[i])   # mask for positives (same class) 
         diff = Array(labels .!= labels[i])   # mask for negatives (different class) 
 
         if !any(same) || !any(diff)

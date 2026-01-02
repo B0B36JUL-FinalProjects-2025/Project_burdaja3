@@ -14,14 +14,17 @@ function get_defualt_hybrid_model()
         Conv((3,3), 16=>32, relu, pad=1),
         MaxPool((2,2)),
 
+        Conv((3,3), 32=>64, relu, pad=1),
+        MaxPool((2,2)),
+
         x -> mean(x, dims=(1,2)),
 
         Flux.flatten,
 
-        Dense(32, 128, relu),
+        Dense(64, 256, relu),
     )
 
-    classifier = Dense(128, 10)
+    classifier = Dense(256, 10)
 
     model = HybridModel(embedding, classifier)
 
