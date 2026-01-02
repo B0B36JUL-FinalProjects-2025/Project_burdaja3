@@ -1,8 +1,11 @@
 using Random
 using HDF5
-include("augmentation/augment.jl")
+
+include("../augmentation/augment.jl")
 
 """
+    generate_augmented_images(img::Array{UInt8,3}; augments::Int=8)
+
 Generate multiple augmented versions of a single image.
 The output contains the original image followed by `augments`
 randomly augmented variants.
@@ -58,6 +61,11 @@ end
 
 
 """
+    save_augmented_dataset(filename::String,
+                                dataset::Array{UInt8,4};
+                                augments::Int=0,
+                                key::String="images")
+
 Save an augmented and shuffled version of a dataset into an HDF5 file.
 
 Each input image is expanded into `(augments + 1)` samples
@@ -102,97 +110,3 @@ function save_augmented_dataset(filename::String,
 
     return nothing
 end
-
-
-"""
-Load the Galaxy10 dataset from the default HDF5 file.
-
-The dataset is expected at:
-    `data/Galaxy10_DECals.h5`
-
-Images are reordered to shape `(H, W, C, N)`.
-
-# Arguments
-- `path::String="data/Galaxy10_DECals.h5"`: path to the Galaxy10 HDF5 file
-
-# Returns
-- `images::Array{UInt8,4}`: image tensor of shape `(H, W, C, N)`
-- `labels::Vector{Int}`: corresponding class labels
-"""
-function load_galaxy(path::String = "data/Galaxy10_DECals.h5")
-    @assert isfile(path) "Galaxy10 file not found: $path"
-
-    h5file = h5open(path, "r")
-
-    images = Array(h5file["images"])
-    labels = Array(h5file["ans"])
-
-    close(h5file)
-
-    # reorder from (C, H, W, N) → (H, W, C, N)
-    images = permutedims(images, (2, 3, 1, 4))
-
-    return images, labels
-end
-
-
-
-"""
-Split dataset into training and test sets, augment training images,
-and save them into HDF5 files by their labels.
-
-For each class label:
-- A fraction of images (`test_frac`) is saved as test set without augmentations
-- Remaining images are augmented and saved as training sets
-
-# Arguments
-- `path::String`: path to the original Galaxy10 dataset
-- `test_frac::Float64=0.1`: fraction of images per class to use for test set
-- `augments::Int=0`: number of augmentations per training image
-
-# Output
-- Train HDF5 files: `data/train/label_<label>.h5`
-- Test HDF5 file: `data/test/test.h5` with `"images"` and `"labels"`
-"""
-function split(;path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
-    images, labels = load_galaxy(path)
-
-    # ensure output directories exist
-    mkpath("data/train")
-    mkpath("data/test")
-
-    test_imgs_list  = []  # collect test images per label
-    test_labels     = []  # collect corresponding labels
-
-    for label in 0:9
-        idx = findall(labels .== label)
-        N = length(idx)
-        n_test = round(Int, test_frac * N)
-
-        shuffled = shuffle(idx)
-
-        # select test and train indices
-        test_idx = shuffled[1:n_test]
-        train_idx = shuffled[n_test+1:end]
-
-        # store test images and labels
-        push!(test_imgs_list, images[:,:,:,test_idx])
-        push!(test_labels, fill(label, length(test_idx)))
-
-        # augment and save train images per label
-        train_images_label = images[:,:,:,train_idx]
-        save_augmented_dataset("data/train/label_$(label).h5", train_images_label, augments=augments)
-    end
-
-    # concatenate test images along 4th dimension
-    test_imgs = cat(test_imgs_list..., dims=4)
-    # concatenate test labels into a single vector
-    test_lbls = vcat(test_labels...)
-    # save test images and labels
-    h5open("data/test/test.h5", "w") do f
-        f["images"] = test_imgs
-        f["labels"] = test_lbls
-    end
-
-    return
-end 

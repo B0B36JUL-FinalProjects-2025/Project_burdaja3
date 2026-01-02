@@ -1,4 +1,6 @@
 """
+    l2_normalize(x; dims=1)
+
 L2-normalize tensor along a given dimension.
 
 A small epsilon is used to avoid division by zero and ensure
@@ -19,6 +21,14 @@ function l2_normalize(x; dims=1)
 end
 
 """
+     metric_loss(emb::Array{Float32,2}, labels::Vector{Int};
+        use_triplet::Bool = true,
+        use_contrastive::Bool = true,
+        margin_triplet::Float32 = 0.8f0,
+        margin_contrastive::Float32 = 1.6f0,
+        triplet_perc::Float32 = 0.5f0
+    )
+
 Compute combined metric loss (triplet + contrastive) on a batch of embeddings.
 
 # Arguments
@@ -58,6 +68,8 @@ end
 
 
 """
+    distances(emb::Array{Float32,2})
+
 Compute pairwise L2 distances between all embeddings in the batch.
 
 # Arguments
@@ -77,6 +89,8 @@ end
 
 
 """
+    contrastive_loss(D::Matrix{Float64}, labels::Vector{Int}; margin::Float32=1.0f0)
+
 Compute contrastive loss on a batch of embeddings.
 
 # Arguments
@@ -105,6 +119,8 @@ end
 
 
 """
+    triplet_loss(D::Matrix{Float64}, labels::Vector{Int}; margin::Float32=0.5f0)
+    
 Compute batch-hard triplet margin loss on a batch.
 
 # Arguments

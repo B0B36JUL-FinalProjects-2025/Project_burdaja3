@@ -3,17 +3,19 @@ using ImageTransformations, Interpolations, Images
 include("rotation.jl")
 include("translation.jl")
 include("zoom.jl")
+include("noise.jl")
 
 """
     augment!(out, imgs;
              max_rotate=180f0,
              max_transpose=0.2f0,
-             max_zoom=1.2f0)
+             max_zoom=1.2f0
+             stddev_perc=0.05
+             )
 
 Applies random augmentation to a batch of images.
 
 Arguments
----------
 - `out::Array{Float32,4}` :
     Output buffer (H × W × C × N)
 
@@ -21,24 +23,25 @@ Arguments
     Input batch (H × W × C × N)
 
 Keyword arguments
------------------
 - `max_rotate`    : maximum rotation angle in degrees
 - `max_transpose` : maximum translation as fraction of image height
 - `max_zoom`      : maximum zoom factor (≥ 1)
+- `stddev_perc`   : standard deviation of the Gaussian noise in percentage
 
 Behavior
---------
 For each image:
 1. rotate
 2. translate
 3. zoom
+4. add noise
 """
 function augment!(
     out::Array{Float32,4},
     imgs::Array{Float32,4};
     max_rotate::Float32 = 180f0,
-    max_transpose::Float32 = 0.2f0,
-    max_zoom::Float32 = 1.2f0,
+    max_transpose::Float32 = 0.25f0,
+    max_zoom::Float32 = 1.25f0,
+    stddev_perc::Float32 = 0.05f0
 )
     H, W, C, N = size(imgs)
     @assert size(out) == (H, W, C, N)
@@ -49,6 +52,7 @@ function augment!(
     # working buffers (reused for all images)
     buf1 = Array{Float32}(undef, H, W, C)
     buf2 = Array{Float32}(undef, H, W, C)
+    buf3 = Array{Float32}(undef, H, W, C)
 
     for n in 1:N
         img  = @view imgs[:,:,:,n]
@@ -61,7 +65,8 @@ function augment!(
 
         rotate!(buf1, img, θ)
         translate!(buf2, buf1, dx, dy)
-        zoom!(outn, buf2, z)
+        noise!(buf2, buf2, stddev_perc = stddev_perc)
+        zoom!(outn, buf3, z)
     end
 
     return out

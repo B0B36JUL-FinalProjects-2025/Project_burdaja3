@@ -13,13 +13,6 @@ image are filled using reflection.
 
 # Returns
 - `out` : the translated image (mutated in-place).
-
-# Behavior
-- Each channel is translated independently.
-- Pixels that move outside the image boundaries are reflected back
-  to avoid border artifacts.
-- Uses `@inbounds` and `@inline` for performance.
-- Raises an error if translation exceeds half the image size.
 """
 function translate!(out::Array{T,3}, img::Array{T,3}, dx::Int, dy::Int) where T
     H, W, C = size(img)

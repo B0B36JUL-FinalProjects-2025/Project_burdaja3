@@ -13,13 +13,6 @@ into the pre-allocated `out` buffer. Only supports `scale >= 1`.
 
 # Returns
 - `out` : the zoomed image (mutated in-place).
-
-# Behavior
-- If `scale == 1`, the input image is copied directly into `out`.
-- If `scale < 1`, throws an error.
-- Zooming is done by resizing each channel individually and cropping
-  the center H×W region to match the original image size.
-- No extra buffers are allocated except for the temporary output of `imresize`.
 """
 function zoom!(out::AbstractArray{Float32,3}, img::AbstractArray{Float32,3}, scale::Float32)
     H, W, C = size(img)

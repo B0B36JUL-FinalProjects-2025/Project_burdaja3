@@ -2,6 +2,8 @@ using HDF5
 using Random
 
 """
+    oad_train(path::String = "data/train")
+
 Load training datasets (one per label) as HDF5 dataset references.
 
 Each returned element is an HDF5.Dataset pointing to the `"images"`
@@ -33,7 +35,9 @@ end
 
 
 """
-Load the test dataset into memory.
+    load_test(path::String = "data/test")
+
+Load the test dataset.
 
 Reads:
     data/test/test.h5

@@ -3,6 +3,8 @@ using Random
 using HDF5
 
 """
+    load_random_block(dset::HDF5.Dataset, block_size::Int)
+
 Load a random contiguous block from a training HDF5 dataset.
 
 The dataset is assumed to have shape `(H, W, C, N)` and to already be
@@ -24,16 +26,18 @@ function load_random_block(dset::HDF5.Dataset, block_size::Int)
 end
 
 
-
-
 """
+    load_batch(train_sets::Vector{HDF5.Dataset}, block_size::Int)
+
 Load a full batch from all training datasets (one per label).
 For each class, a random contiguous block of size `block_size` is loaded,
 then all blocks are concatenated into a pre-allocated buffer.  
 Labels are generated as one-hot vectors.  
+
 # Arguments
 - `train_sets::Vector{HDF5.Dataset}`: vector of HDF5.Dataset, one per class (from `load_train()`)
 - `block_size::Int`: number of samples per class to include in the batch
+
 # Returns
 - `x::Array{Float32,4}`: images normalized to [0,1], shape `(H, W, C, num_classes * block_size)`
 - `y::Array{Bool,2}`: one-hot labels, shape `(num_classes, num_classes * block_size)`

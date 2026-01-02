@@ -13,11 +13,6 @@ the result into the pre-allocated `out` buffer.
 
 # Returns
 - `out` : the rotated image (mutated in-place).
-
-# Behavior
-- Each channel is rotated independently using `imrotate`.
-- The output buffer must have the same dimensions as the input.
-- Uses B-spline interpolation (linear) and reflects edges to avoid border artifacts.
 """
 function rotate!(out::AbstractArray{Float32,3}, img::AbstractArray{Float32,3}, θ::Real)
     H, W, C = size(img)
