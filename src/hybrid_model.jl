@@ -1,6 +1,16 @@
 using Flux
 using Flux: onehotbatch, onecold
+using Statistics
 
+"""
+    HybridModel
+
+Simple hybrid model combining an embedding network and a classifier.
+
+# Fields
+- `embedding`: neural network producing feature embeddings
+- `classifier`: classification head mapping embeddings to class logits
+"""
 struct HybridModel
     embedding
     classifier

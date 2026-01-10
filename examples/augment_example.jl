@@ -2,7 +2,14 @@ include("../src/dataset_loading.jl")
 include("../src/augmentation/augment.jl")
 include("../src/show_image.jl")
 
+"""
+    augment_example(path::String = "data/test")
 
+Show an example of image augmentation.
+
+# Arguments
+- `path::String`: path to the dataset
+"""
 function augment_example(path::String = "data/test")
     imgs, labels = load_test(path)
 

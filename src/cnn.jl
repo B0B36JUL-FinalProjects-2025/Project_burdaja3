@@ -11,6 +11,20 @@ include("hybrid_model.jl")
 include("visualisation.jl")
 include("model_save_load.jl")
 
+"""
+    loss_fn(model, x, y, alpha)
+
+Compute training loss combining classification and metric loss.
+
+# Arguments
+- `model`: hybrid model
+- `x`: input batch
+- `y`: target labels (one-hot encoded)
+- `alpha`: weight of the metric loss term
+
+# Returns
+- loss value
+"""
 function loss_fn(model, x, y, alpha)
     embedding = get_embs(model, x)
     logits = model(x)
@@ -28,7 +42,21 @@ function loss_fn(model, x, y, alpha)
 end
 
 
+"""
+    train_model(; augment=true, batches=2000, block_size=16,
+                  alpha=0.7f0, save_path="model/cnn_metric.bson",
+                  resume=true)
 
+Train the hybrid model on the training dataset.
+
+# Keyword Arguments
+- `augment::Bool`: apply data augmentation during training
+- `batches::Int`: number of training iterations
+- `block_size::Int`: number of same labeled images in one batch, batch size = block size * number of distinct classes
+- `alpha::Float32`: weight of metric loss
+- `save_path::String`: path to save and load the model
+- `resume::Bool`: resume training from saved checkpoint if available
+"""
 function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16, alpha::Float32=0.7f0, save_path::String="model/cnn_metric.bson", resume::Bool=true)
     model = get_defualt_hybrid_model()
     if resume && isfile(save_path)
