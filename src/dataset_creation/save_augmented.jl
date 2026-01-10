@@ -48,7 +48,7 @@ function generate_augmented_images(img::Array{UInt8,3}; augments::Int=8)
     for i in 2:augments+1
         u8_to_f32!(buffer_32, img)
 
-        augment!(buffer_32, buffer_32)
+        augment!(buffer_32, buffer_32, max_value=255.0)
 
         f32_to_u8!(buffer_8, buffer_32)
 

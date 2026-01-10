@@ -1,3 +1,6 @@
+using BSON
+using Flux
+
 """
     save_model(path, model, opt_state, step)
 

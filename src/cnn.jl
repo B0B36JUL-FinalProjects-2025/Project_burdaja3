@@ -1,6 +1,5 @@
 using Flux
 using Flux: onehotbatch, logitcrossentropy
-using Statistics: mean
 using Random
 using BSON
 
@@ -11,12 +10,6 @@ include("metric.jl")
 include("hybrid_model.jl")
 include("visualisation.jl")
 include("model_save_load.jl")
-
-function accuracy(pred, y)
-    y_true = Flux.onecold(y, 0:9)     
-    y_pred = Flux.onecold(pred, 0:9)    
-    return mean(y_pred .== y_true)      
-end
 
 function loss_fn(model, x, y, alpha)
     embedding = get_embs(model, x)
@@ -65,18 +58,6 @@ function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16,
         if batch % 10 == 0
             println(batch)
             println(loss_fn(model, xb, yb, alpha))
-            println(accuracy(model(xb),yb))
-
-            if batch % 100 == 0
-                test_x, test_y = load_test()
-                pred = model((Float32.(test_x)) ./ 255f0)
-                y = onehotbatch(test_y, 0:9)
-                println(accuracy(pred, y))
-
-                embs = get_embs(model, test_x)
-                visualise2D(embs, test_y)
-                #visualise3D(embs, test_y)
-            end
         end
     end
 

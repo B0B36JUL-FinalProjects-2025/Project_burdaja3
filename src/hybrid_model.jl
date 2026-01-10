@@ -1,3 +1,6 @@
+using Flux
+using Flux: onehotbatch, onecold
+
 struct HybridModel
     embedding
     classifier
