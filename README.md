@@ -33,6 +33,7 @@ embeddings using metric learning, which can be used for visualization, clusterin
 
 ## Project Structure
 
+```
 .
 ├── data/ # Dataset and dataset preparation
 │ └── README.md # Dataset download & preprocessing instructions
@@ -66,7 +67,7 @@ embeddings using metric learning, which can be used for visualization, clusterin
 ├── Project.toml
 ├── Manifest.toml
 └── README.md
-
+```
 
 ---
 
