@@ -58,7 +58,7 @@ Train the hybrid model on the training dataset.
 - `resume::Bool`: resume training from saved checkpoint if available
 """
 function train_model(;augment::Bool=true, batches::Int=2000, block_size::Int=16, alpha::Float32=0.7f0, save_path::String="model/cnn_metric.bson", resume::Bool=true)
-    model = get_defualt_hybrid_model()
+    model = get_default_hybrid_model()
     if resume && isfile(save_path)
         opt_state, start_batch = load_model!(save_path, model)
     else

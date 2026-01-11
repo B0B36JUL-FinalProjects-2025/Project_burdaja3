@@ -17,14 +17,14 @@ struct HybridModel
 end
 
 """
-    get_defualt_hybrid_model()
+    get_default_hybrid_model()
 
 Creates and returns the default HybridModel consisting of an embedding module and a classifier module.
 
 # Returns
 - `HybridModel` : A model composed of the embedding layer and classifier.
 """
-function get_defualt_hybrid_model()
+function get_default_hybrid_model()
     embedding = Chain(
         Conv((3,3), 3=>8, relu, pad=1),
         MaxPool((2,2)),

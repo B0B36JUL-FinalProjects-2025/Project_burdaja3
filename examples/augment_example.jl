@@ -23,4 +23,6 @@ function augment_example(path::String = "data/test")
 
     show_image(img)
     show_image(augmented)
+
+    return
 end

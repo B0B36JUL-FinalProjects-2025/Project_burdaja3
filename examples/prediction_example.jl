@@ -1,4 +1,5 @@
 using Statistics: mean
+using Flux: onecold
 
 include("../src/dataset_loading.jl")
 include("../src/model_save_load.jl")
@@ -16,10 +17,12 @@ Run a prediction and visualisation example of embeddings using a pretrained hybr
 - `path_model::String`: path to the saved model
 """
 function prediction_example(path_dataset::String = "data/test", path_model::String="model/cnn_metric.bson")
-    model = get_defualt_hybrid_model()
+    model = get_default_hybrid_model()
     load_model!(path_model, model)
 
     imgs, labels = load_test(path_dataset)
+
+    imgs = (Float32.(imgs)) ./ 255f0
 
     embs = get_embs(model, imgs)
     pred = get_class(model, imgs)
@@ -31,4 +34,6 @@ function prediction_example(path_dataset::String = "data/test", path_model::Stri
 
     visualise2D(embs, labels)
     visualise3D(embs, labels)
+
+    return
 end

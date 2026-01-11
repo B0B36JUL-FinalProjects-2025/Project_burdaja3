@@ -10,13 +10,14 @@ Place the file in the `data/` folder:
 
 data/Galaxy10_DECals.h5
 
-## 2. Generate augmented training datasetes and split test set
+## 2. Generate augmented training datasets and split test set
 
 Run the `split` function from the `src/dataset_creation/dataset_split.jl` script:
 
 ```julia
 include("src/dataset_creation/dataset_split.jl")
 split(path="data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
+```
 
 
 - The dataset is loaded from `data/Galaxy10_DECals.h5`.
@@ -35,7 +36,7 @@ split(path="data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
     data/train/label_9.h5
     ```
     containing:
-    - `"images"` → test images
+    - `"images"` → train images
 
   - **Combined test set**:
     ```
