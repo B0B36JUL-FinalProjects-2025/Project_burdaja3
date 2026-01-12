@@ -1,6 +1,9 @@
 __precompile__(false)
 module GalaxyCNN
 
+using UMAP
+using Plots
+
 include("augmentation/augment.jl")
 
 include("dataset_creation/galaxies_split.jl")
