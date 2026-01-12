@@ -15,7 +15,7 @@ function augment_example(path::String = "data/test")
 
     idx = rand(1:size(imgs, 4))
 
-    img = float32.(imgs[:,:,:,idx]) / 255
+    img = Float32.(imgs[:,:,:,idx]) / 255
 
     augmented = similar(img)
 

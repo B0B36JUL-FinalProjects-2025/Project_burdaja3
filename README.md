@@ -132,7 +132,7 @@ imgs, labels = load_test(path)
 
 idx = rand(1:size(imgs, 4))
 
-img = float32.(imgs[:,:,:,idx]) / 255
+img = Float32.(imgs[:,:,:,idx]) / 255
 
 augmented = similar(img)
 
@@ -162,7 +162,7 @@ load_model!(path_model, model)
 
 imgs, labels = load_test(path_dataset)
 
-imgs = (Float32.(imgs)) ./ 255f0
+imgs = Float32.(imgs) ./ 255f0
 
 embs = get_embs(model, imgs)
 pred = get_class(model, imgs)

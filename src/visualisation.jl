@@ -18,7 +18,7 @@ Visualizes embeddings by applying UMAP dimensionality reduction and creating a s
 function visualise2D(data::Array{Float32, 2}, labels::Vector{Int})
     distan = distances(data)
 
-    Y = umap(
+    Y = UMAP.umap(
         distan,
         2;
         metric=:precomputed
@@ -51,7 +51,7 @@ Visualizes embeddings by applying UMAP dimensionality reduction and creating a 3
 function visualise3D(data::Array{Float32, 2}, labels::Vector{Int})
     distan = distances(data)
 
-    Y = umap(
+    Y = UMAP.umap(
         distan,
         3;             
         metric = :precomputed
