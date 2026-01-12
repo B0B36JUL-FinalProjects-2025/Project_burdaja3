@@ -1,10 +1,6 @@
 module GalaxyCNN
 
 include("augmentation/augment.jl")
-include("augmentation/noise.jl")
-include("augmentation/rotation.jl")
-include("augmentation/translation.jl")
-include("augmentation/zoom.jl")
 
 include("dataset_creation/galaxies_split.jl")
 
