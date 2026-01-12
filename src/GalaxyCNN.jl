@@ -1,3 +1,4 @@
+__precompile__(false)
 module GalaxyCNN
 
 include("augmentation/augment.jl")
