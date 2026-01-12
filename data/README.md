@@ -6,21 +6,20 @@ Download the HDF5 file from:
 
 [Galaxy10_DECals dataset](https://astronn.readthedocs.io/en/stable/galaxy10.html)
 
-Place the file in the `data/` folder:
+Place the file in the `data` folder:
 
 data/Galaxy10_DECals.h5
 
 ## 2. Generate augmented training datasets and split test set
 
-Run the `split` function from the `src/dataset_creation/dataset_split.jl` script:
+Run the `split` function:
 
 ```julia
-include("src/dataset_creation/dataset_split.jl")
-split(path="data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
+split(path_in="data/Galaxy10_DECals.h5", path_out="data", test_frac=0.1, augments=0)
 ```
 
 
-- The dataset is loaded from `data/Galaxy10_DECals.h5`.
+- The dataset is loaded from **path_in**.
 
 - For each class label (0–9):
   - A fraction (`test_frac`) of images is reserved as **test set** and **not augmented**.
@@ -30,17 +29,17 @@ split(path="data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
 - The output is saved in HDF5 format:
   - **Training data per label**:
     ```
-    data/train/label_0.h5
-    data/train/label_1.h5
+    path_out/train/label_0.h5
+    path_out/train/label_1.h5
     ...
-    data/train/label_9.h5
+    path_out/train/label_9.h5
     ```
     containing:
     - `"images"` → train images
 
   - **Combined test set**:
     ```
-    data/test/test.h5
+    path_out/test/test.h5
     ```
     containing:
     - `"images"` → test images

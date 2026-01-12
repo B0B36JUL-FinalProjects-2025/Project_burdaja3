@@ -15,7 +15,8 @@ For each class label:
 - Remaining images are augmented and saved as training sets
 
 # Arguments
-- `path::String`: path to the original Galaxy10 dataset
+- `path_in::String`: path to the original Galaxy10 dataset
+- `path_out::String`: path to the output dataset directories
 - `test_frac::Float64=0.1`: fraction of images per class to use for test set
 - `augments::Int=0`: number of augmentations per training image
 
@@ -23,12 +24,14 @@ For each class label:
 - Train HDF5 files: `data/train/label_<label>.h5`
 - Test HDF5 file: `data/test/test.h5` with `"images"` and `"labels"`
 """
-function split(;path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augments=0)
-    images, labels = load_galaxy(path)
+function split(;path_in::String = "data/Galaxy10_DECals.h5", path_out::String = "data", test_frac=0.1, augments=0)
+    images, labels = load_galaxy(path_in)
 
     # ensure output directories exist
-    mkpath("data/train")
-    mkpath("data/test")
+    train_dir = joinpath(path_out, "train")
+    test_dir  = joinpath(path_out, "test")
+    mkpath(train_dir)
+    mkpath(test_dir)
 
     test_imgs_list  = []  # collect test images per label
     test_labels     = []  # collect corresponding labels
@@ -50,7 +53,7 @@ function split(;path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augment
 
         # augment and save train images per label
         train_images_label = images[:,:,:,train_idx]
-        save_augmented_dataset("data/train/label_$(label).h5", train_images_label, augments=augments)
+        save_augmented_dataset(joinpath(train_dir, "label_$(label).h5"), train_images_label, augments=augments)
     end
 
     # concatenate test images along 4th dimension
@@ -58,7 +61,7 @@ function split(;path::String = "data/Galaxy10_DECals.h5", test_frac=0.1, augment
     # concatenate test labels into a single vector
     test_lbls = vcat(test_labels...)
     # save test images and labels
-    h5open("data/test/test.h5", "w") do f
+    h5open(joinpath(test_dir, "test.h5"), "w") do f
         f["images"] = test_imgs
         f["labels"] = test_lbls
     end
