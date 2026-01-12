@@ -95,12 +95,6 @@ is capable of learning meaningful representations of galaxy morphologies.
 
 ## Installation
 
-### Clone the repository
-
-```bash
-git clone https://github.com/B0B36JUL-FinalProjects-2025/Project_burdaja3.git GalaxyCNN
-```
-
 ### Open Julia
 
 ```bash
