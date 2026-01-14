@@ -1,5 +1,5 @@
 using Test
-include("../src/augmentation/translation.jl")
+using GalaxyCNN
 
 @testset "translate!" begin
 

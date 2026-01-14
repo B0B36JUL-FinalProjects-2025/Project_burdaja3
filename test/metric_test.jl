@@ -1,5 +1,5 @@
 using Test
-include("../src/metric.jl")
+using GalaxyCNN
 
 
 @testset "l2_normalize" begin
@@ -84,7 +84,7 @@ end
         labels = [1, 1, 2, 2]
         D = distances(emb)
 
-        loss = contrastive_loss(D, labels; margin=0.5f0)
+        loss = metric_loss_fn(ContrastiveLoss(0.7f0, 1.6f0), D, labels)
         @test isapprox(loss, 0f0; atol=1e-5)
     end
 
@@ -93,7 +93,7 @@ end
         labels = [1, 1, 1, 2, 2, 2]
         D = distances(emb)
 
-        loss = contrastive_loss(D, labels)
+        loss = metric_loss_fn(ContrastiveLoss(0.7f0, 1.6f0), D, labels)
         @test loss ≥ 0f0
     end
 
@@ -111,7 +111,7 @@ end
         labels = [1, 1, 2, 2]
         D = distances(emb)
 
-        loss = triplet_loss(D, labels; margin=0.1f0)
+        loss = metric_loss_fn(TripletLoss(0.4f0, 0.8f0), D, labels)
         @test isapprox(loss, 0f0; atol=1e-5)
     end
 
@@ -120,50 +120,9 @@ end
         labels = [1, 1, 2, 2, 3]
         D = distances(emb)
 
-        loss = triplet_loss(D, labels)
+        loss = metric_loss_fn(TripletLoss(0.4f0, 0.8f0), D, labels)
         @test loss ≥ 0f0
     end
 
 end
 
-
-@testset "metric_loss" begin
-
-    @testset "zero loss test" begin
-        emb = Float32[
-            1   1   -1  -1;
-            0   0    0   0
-        ]
-
-        labels = [1, 1, 2, 2]
-
-        loss = metric_loss(emb, labels;
-            use_triplet=true,
-            use_contrastive=true,
-            margin_triplet=0.1f0,
-            margin_contrastive=0.5f0,
-            triplet_perc=0.5f0
-        )
-
-        @test isapprox(loss, 0f0; atol=1e-5)
-    end
-
-    @testset "disabled loss test" begin
-        emb = randn(Float32, 6, 4)
-        labels = [1, 1, 2, 2]
-
-        loss_triplet = metric_loss(emb, labels;
-            use_triplet=true,
-            use_contrastive=false
-        )
-
-        loss_contrastive = metric_loss(emb, labels;
-            use_triplet=false,
-            use_contrastive=true
-        )
-
-        @test loss_triplet ≥ 0f0
-        @test loss_contrastive ≥ 0f0
-    end
-
-end

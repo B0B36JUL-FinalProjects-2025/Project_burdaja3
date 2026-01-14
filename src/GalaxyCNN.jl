@@ -15,19 +15,19 @@ include("show_image.jl")
 include("visualisation.jl")
 
 
-export augment!
+export augment!, translate!, noise!, zoom!, rotate!
 
 export split
 
-export load_batch
+export load_batch, load_test
 
 export loss_fn, train_model
 
 export load_train, load_test
 
-export get_default_hybrid_model, get_probs, get_embs, get_class
+export HybridModel, get_default_hybrid_model, get_probs, get_embs, get_class
 
-export metric_loss
+export metric_loss_fn, l2_normalize, distances, TripletLoss, MetricLoss, ContrastiveLoss
 
 export save_model, load_model!
 

@@ -1,6 +1,4 @@
-include("../src/dataset_loading.jl")
-include("../src/augmentation/augment.jl")
-include("../src/show_image.jl")
+using GalaxyCNN
 
 """
     augment_example(path::String = "data/test")

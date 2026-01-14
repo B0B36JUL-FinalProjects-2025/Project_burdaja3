@@ -1,10 +1,6 @@
 using Statistics: mean
 using Flux: onecold
-
-include("../src/dataset_loading.jl")
-include("../src/model_save_load.jl")
-include("../src/hybrid_model.jl")
-include("../src/visualisation.jl")
+using GalaxyCNN
 
 """
     prediction_example(path_dataset::String = "data/test",

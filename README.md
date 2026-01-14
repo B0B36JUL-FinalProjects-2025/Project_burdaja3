@@ -189,8 +189,11 @@ train_model(
     augment=true,         # apply data augmentation
     batches=2000,         # number of training iterations
     block_size=16,        # batch size = block_size * number of classes
-    alpha=0.7f0,          # weight of metric loss
     save_path="model/cnn_metric.bson",  # where to save the model
     resume=true           # resume from checkpoint if exists
-)
+    use_metric_learning::Bool=true, # use metric learning for loss function
+    metric_losses::Vector{MetricLoss}=MetricLoss[ # defining what metric losses to use
+        ContrastiveLoss(0.7f0, 1.6f0),
+        TripletLoss(0.4f0, 0.8f0)
+    ])
 ```
