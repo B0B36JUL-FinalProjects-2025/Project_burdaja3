@@ -35,13 +35,13 @@ function loss_fn(model,
     logits = model(x)
     loss = logitcrossentropy(logits, y)
 
-    embedding = Float32.(get_embs(model, x))
+    embedding = get_embs(model, x)
     labels = Flux.onecold(y, 0:9)
 
     D = distances(embedding) 
 
     for metric_loss in metric_losses
-        loss += metric_loss_fn(metric_loss, embedding, labels)
+        loss += metric_loss_fn(metric_loss, D, labels)
     end
         
     return loss
